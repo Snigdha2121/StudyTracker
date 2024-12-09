@@ -27,8 +27,10 @@ function generateCalendar(container, person) {
         // Highlight days based on data
         const key = `${person}-${currentMonth}-${currentYear}-${i}`;
         if (studyData[key]) {
-            const { DSA, Apti } = studyData[key];
-            if (DSA && Apti) {
+            const { DSA, Apti, BothNotCompleted } = studyData[key];
+            if (BothNotCompleted) {
+                day.classList.add("not-completed");
+            } else if (DSA && Apti) {
                 day.classList.add("both-completed");
             } else if (DSA) {
                 day.classList.add("dsa-completed");
@@ -57,10 +59,11 @@ function updateTaskStatus(task) {
 
     const key = `${currentPerson}-${currentMonth}-${currentYear}-${currentDay}`;
     if (!studyData[key]) {
-        studyData[key] = { DSA: false, Apti: false };
+        studyData[key] = { DSA: false, Apti: false, BothNotCompleted: false };
     }
 
     studyData[key][task] = true;
+    studyData[key].BothNotCompleted = false; // Reset "not completed" if a task is done
 
     // Save to localStorage
     localStorage.setItem("studyData", JSON.stringify(studyData));
@@ -69,12 +72,17 @@ function updateTaskStatus(task) {
     updateCalendar();
 }
 
-// Update the status of both tasks to "not completed"
-function updateStatus(completed) {
+// Mark both tasks as not completed
+function updateStatus() {
     if (!currentPerson || !currentDay) return;
 
     const key = `${currentPerson}-${currentMonth}-${currentYear}-${currentDay}`;
-    studyData[key] = { DSA: completed, Apti: completed };
+    if (!studyData[key]) {
+        studyData[key] = { DSA: false, Apti: false, BothNotCompleted: false };
+    }
+
+    // Mark both tasks as not completed
+    studyData[key] = { DSA: false, Apti: false, BothNotCompleted: true };
 
     // Save to localStorage
     localStorage.setItem("studyData", JSON.stringify(studyData));
@@ -110,11 +118,11 @@ function showSummary() {
         let missedDays = 0;
         for (let i = 1; i <= 31; i++) {
             const key = `${person}-${currentMonth}-${currentYear}-${i}`;
-            if (studyData[key] && (!studyData[key].DSA || !studyData[key].Apti)) {
+            if (studyData[key] && studyData[key].BothNotCompleted) {
                 missedDays++;
             }
         }
-        summary.innerHTML += `<p>${person} missed ${missedDays} tasks. Fine: ₹${missedDays}</p>`;
+        summary.innerHTML += `<p>${person} missed ${missedDays} days. Fine: ₹${missedDays}</p>`;
     });
 }
 
